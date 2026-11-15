@@ -1,5 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Background, Button, IconBubble } from '../ui';
@@ -12,11 +13,94 @@ const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; text: string
   { icon: 'location', title: 'Ta position part par SMS', text: 'Avec un lien Google Maps, sans compte ni internet côté contact.' },
 ];
 
+const LOCATION_POINTS: { icon: keyof typeof Ionicons.glyphMap; text: string }[] = [
+  { icon: 'flash-outline', text: 'Ta position est prête à partir dès que tu en as besoin, sans perdre de temps.' },
+  { icon: 'eye-off-outline', text: 'Utilisée uniquement quand l’app est ouverte. Jamais stockée, jamais partagée.' },
+  { icon: 'chatbubble-ellipses-outline', text: 'Envoyée seulement à ton contact, et seulement quand tu déclenches le SOS.' },
+];
+
 export default function OnboardingScreen({ navigation }: any) {
-  const start = async () => {
+  const [step, setStep] = useState<'intro' | 'location'>('intro');
+  const [asking, setAsking] = useState(false);
+  const [denied, setDenied] = useState(false);
+
+  const goToContact = async () => {
     await setOnboarded();
     navigation.replace('Contact', { firstRun: true });
   };
+
+  const askLocation = async () => {
+    setAsking(true);
+    try {
+      const current = await Location.getForegroundPermissionsAsync();
+      if (current.status === 'granted') return goToContact();
+      if (!current.canAskAgain) {
+        setDenied(true);
+        return;
+      }
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') return goToContact();
+      setDenied(true);
+    } catch {
+      setDenied(true);
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  if (step === 'location') {
+    return (
+      <Background>
+        <SafeAreaView style={styles.safe}>
+          <View>
+            <Text style={[type.label, styles.stepLabel]}>Étape 1 sur 2</Text>
+            <View style={[styles.hero, { marginTop: 16 }]}>
+              <View style={[styles.logoRing, { backgroundColor: colors.okSoft }]}>
+                <View style={[styles.logo, styles.logoOk]}>
+                  <Ionicons name="location" size={44} color={colors.bg} />
+                </View>
+              </View>
+              <Text style={[type.title, styles.center]}>Autorise la localisation</Text>
+              <Text style={[type.body, styles.center, { marginTop: 10 }]}>
+                C’est ce qui permet à IMLOST de dire à ton proche exactement où te trouver.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.steps}>
+            {LOCATION_POINTS.map((p) => (
+              <View key={p.icon} style={styles.step}>
+                <IconBubble name={p.icon} color={colors.ok} bg={colors.okSoft} size={40} />
+                <Text style={[styles.stepText, { flex: 1, fontSize: 15, color: colors.text }]}>{p.text}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ gap: 12 }}>
+            {denied && (
+              <Text style={styles.denied}>
+                Localisation refusée. Tu pourras l’activer plus tard dans les réglages ; en attendant, l’alerte partira
+                sans ta position.
+              </Text>
+            )}
+            {denied ? (
+              <>
+                <Button label="Ouvrir les réglages" icon="settings-outline" onPress={() => Linking.openSettings()} />
+                <Button label="Continuer sans" variant="ghost" onPress={goToContact} />
+              </>
+            ) : (
+              <>
+                <Button label="Autoriser la localisation" icon="location" onPress={askLocation} loading={asking} />
+                <Pressable onPress={goToContact} hitSlop={8} style={styles.later}>
+                  <Text style={styles.laterText}>Plus tard</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </SafeAreaView>
+      </Background>
+    );
+  }
 
   return (
     <Background>
@@ -47,7 +131,7 @@ export default function OnboardingScreen({ navigation }: any) {
           ))}
         </View>
 
-        <Button label="Commencer" icon="arrow-forward" onPress={start} />
+        <Button label="Commencer" icon="arrow-forward" onPress={() => setStep('location')} />
       </SafeAreaView>
     </Background>
   );
@@ -75,6 +159,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: '0px 10px 30px rgba(255, 77, 79, 0.5)',
   },
+  logoOk: { backgroundColor: colors.ok, boxShadow: '0px 10px 30px rgba(61, 220, 151, 0.45)' },
+  stepLabel: { textAlign: 'center', marginTop: 16 },
+  denied: { color: colors.warn, fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  later: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  laterText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },
   steps: { gap: 20 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   stepTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 2 },

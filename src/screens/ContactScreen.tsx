@@ -85,7 +85,7 @@ export default function ContactScreen({ navigation, route }: any) {
                   <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </Pressable>
               )}
-              <Text style={type.label}>{firstRun ? 'Étape 1 sur 1' : 'Contact de confiance'}</Text>
+              <Text style={type.label}>{firstRun ? 'Étape 2 sur 2' : 'Contact de confiance'}</Text>
             </View>
 
             <Text style={type.title}>Qui doit recevoir ton alerte ?</Text>
