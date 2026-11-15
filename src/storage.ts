@@ -8,7 +8,6 @@ export type Contact = {
 
 const CONTACT_KEY = 'IMLOST_CONTACT_V2';
 const LEGACY_PHONE_KEY = 'SAVED_PHONE_NUMBER';
-const ONBOARDED_KEY = 'IMLOST_ONBOARDED';
 const LAST_SENT_KEY = 'IMLOST_LAST_SENT';
 
 export const defaultMessage = (name: string) =>
@@ -29,22 +28,6 @@ export async function loadContact(): Promise<Contact | null> {
 
 export async function saveContact(contact: Contact) {
   await AsyncStorage.setItem(CONTACT_KEY, JSON.stringify(contact));
-}
-
-export async function isOnboarded() {
-  try {
-    return (await AsyncStorage.getItem(ONBOARDED_KEY)) === '1';
-  } catch {
-    return false;
-  }
-}
-
-export async function setOnboarded() {
-  try {
-    await AsyncStorage.setItem(ONBOARDED_KEY, '1');
-  } catch {
-    // sans gravité : l'accueil sera simplement réaffiché
-  }
 }
 
 export async function loadLastSent(): Promise<number | null> {

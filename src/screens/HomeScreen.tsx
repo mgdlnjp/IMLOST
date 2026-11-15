@@ -72,7 +72,7 @@ export default function HomeScreen({ navigation }: any) {
 
   // ---------- Contact ----------
   useEffect(() => {
-    const refresh = () => loadContact().then((c) => (c ? setContact(c) : navigation.replace('Contact', { firstRun: true })));
+    const refresh = () => loadContact().then((c) => (c ? setContact(c) : navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] })));
     refresh();
     loadLastSent().then(setLastSent);
     return navigation.addListener('focus', refresh);

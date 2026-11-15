@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Background, Button, Card } from '../ui';
+import { StepHeader } from './OnboardingScreen';
 import { colors, radius, type } from '../theme';
 import { cleanPhone, defaultMessage, isValidPhone, loadContact, saveContact } from '../storage';
 
@@ -55,7 +56,8 @@ export default function ContactScreen({ navigation, route }: any) {
         phone: cleanPhone(phone),
         message: effectiveMessage.trim() || defaultMessage(name.trim()),
       });
-      if (firstRun || !navigation.canGoBack()) navigation.replace('Home');
+      // Fin de l'accueil : l'écran SOS devient la seule page de la pile
+      if (firstRun || !navigation.canGoBack()) navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
       else navigation.goBack();
     } catch {
       setSaveError("Impossible d'enregistrer. Réessaie.");
@@ -79,14 +81,22 @@ export default function ContactScreen({ navigation, route }: any) {
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <View style={styles.header}>
-              {!firstRun && navigation.canGoBack() && (
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back} accessibilityLabel="Retour">
-                  <Ionicons name="chevron-back" size={24} color={colors.text} />
-                </Pressable>
-              )}
-              <Text style={type.label}>{firstRun ? 'Étape 2 sur 2' : 'Contact de confiance'}</Text>
-            </View>
+            {firstRun ? (
+              <StepHeader
+                step={2}
+                total={2}
+                onBack={navigation.canGoBack() ? () => navigation.goBack() : undefined}
+              />
+            ) : (
+              <View style={styles.header}>
+                {navigation.canGoBack() && (
+                  <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back} accessibilityLabel="Retour">
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                  </Pressable>
+                )}
+                <Text style={type.label}>Contact de confiance</Text>
+              </View>
+            )}
 
             <Text style={type.title}>Qui doit recevoir ton alerte ?</Text>
             <Text style={[type.body, { marginTop: 8, marginBottom: 24 }]}>
