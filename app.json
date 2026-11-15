@@ -6,12 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B1020"
-    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -37,6 +31,15 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "IMLOST utilise ta position pour l'envoyer par SMS à ton contact de confiance quand tu déclenches une alerte."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B1020"
         }
       ]
     ]
