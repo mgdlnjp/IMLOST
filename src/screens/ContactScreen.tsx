@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Background, Button, Card } from '../ui';
 import { StepHeader } from './OnboardingScreen';
 import { colors, radius, type } from '../theme';
+import { t } from '../i18n';
 import { cleanPhone, defaultMessage, isValidPhone, loadContact, saveContact } from '../storage';
 
 export default function ContactScreen({ navigation, route }: any) {
@@ -45,14 +46,14 @@ export default function ContactScreen({ navigation, route }: any) {
 
   const save = async () => {
     if (!isValidPhone(phone)) {
-      setPhoneError('Entre un numéro valide (8 à 15 chiffres, indicatif possible).');
+      setPhoneError(t('phoneError'));
       return;
     }
     setSaving(true);
     setSaveError(null);
     try {
       await saveContact({
-        name: name.trim() || 'Mon contact',
+        name: name.trim() || t('defaultContactName'),
         phone: cleanPhone(phone),
         message: effectiveMessage.trim() || defaultMessage(name.trim()),
       });
@@ -60,7 +61,7 @@ export default function ContactScreen({ navigation, route }: any) {
       if (firstRun || !navigation.canGoBack()) navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
       else navigation.goBack();
     } catch {
-      setSaveError("Impossible d'enregistrer. Réessaie.");
+      setSaveError(t('saveError'));
     } finally {
       setSaving(false);
     }
@@ -90,25 +91,25 @@ export default function ContactScreen({ navigation, route }: any) {
             ) : (
               <View style={styles.header}>
                 {navigation.canGoBack() && (
-                  <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back} accessibilityLabel="Retour">
+                  <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back} accessibilityLabel={t('back')}>
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
                   </Pressable>
                 )}
-                <Text style={type.label}>Contact de confiance</Text>
+                <Text style={type.label}>{t('contactLabel')}</Text>
               </View>
             )}
 
-            <Text style={type.title}>Qui doit recevoir ton alerte ?</Text>
+            <Text style={type.title}>{t('contactTitle')}</Text>
             <Text style={[type.body, { marginTop: 8, marginBottom: 24 }]}>
-              Choisis quelqu'un qui pourra venir te chercher ou t'aider rapidement.
+              {t('contactText')}
             </Text>
 
-            <Text style={styles.fieldLabel}>Prénom ou surnom</Text>
+            <Text style={styles.fieldLabel}>{t('nameLabel')}</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="person-outline" size={20} color={colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="Maman, Léo…"
+                placeholder={t('namePlaceholder')}
                 placeholderTextColor={colors.textFaint}
                 value={name}
                 onChangeText={setName}
@@ -117,12 +118,12 @@ export default function ContactScreen({ navigation, route }: any) {
               />
             </View>
 
-            <Text style={styles.fieldLabel}>Numéro de téléphone</Text>
+            <Text style={styles.fieldLabel}>{t('phoneLabel')}</Text>
             <View style={[styles.inputWrap, phoneError && { borderColor: colors.danger }]}>
               <Ionicons name="call-outline" size={20} color={colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="06 12 34 56 78"
+                placeholder={t('phonePlaceholder')}
                 placeholderTextColor={colors.textFaint}
                 keyboardType="phone-pad"
                 value={phone}
@@ -136,7 +137,7 @@ export default function ContactScreen({ navigation, route }: any) {
             </View>
             {phoneError && <Text style={styles.error}>{phoneError}</Text>}
 
-            <Text style={styles.fieldLabel}>Message envoyé</Text>
+            <Text style={styles.fieldLabel}>{t('messageLabel')}</Text>
             <TextInput
               style={[styles.inputWrap, styles.textarea]}
               multiline
@@ -150,7 +151,7 @@ export default function ContactScreen({ navigation, route }: any) {
             />
 
             <Card style={styles.preview}>
-              <Text style={[type.label, { marginBottom: 10 }]}>Aperçu du SMS</Text>
+              <Text style={[type.label, { marginBottom: 10 }]}>{t('smsPreview')}</Text>
               <View style={styles.bubble}>
                 <Text style={styles.bubbleText}>
                   {effectiveMessage}{' '}
@@ -163,7 +164,7 @@ export default function ContactScreen({ navigation, route }: any) {
           </ScrollView>
 
           <View style={styles.footer}>
-            <Button label={firstRun ? 'Enregistrer et continuer' : 'Enregistrer'} icon="checkmark" onPress={save} loading={saving} />
+            <Button label={firstRun ? t('saveContinue') : t('save')} icon="checkmark" onPress={save} loading={saving} />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

@@ -18,6 +18,7 @@ import * as SMS from 'expo-sms';
 import * as Haptics from 'expo-haptics';
 import { Background, Card, IconBubble } from '../ui';
 import { colors, radius, type } from '../theme';
+import { localeTag, t } from '../i18n';
 import { Contact, loadContact, loadLastSent, maskPhone, saveLastSent } from '../storage';
 
 const HOLD_MS = 1200;
@@ -39,15 +40,17 @@ type SendState =
   | { kind: 'error'; message: string };
 
 const timeLabel = (ts: number) =>
-  new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  new Date(ts).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' });
 
 const relativeLabel = (ts: number) => {
   const min = Math.round((Date.now() - ts) / 60000);
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
+  if (min < 1) return t('justNow');
+  if (min < 60) return t('minutesAgo', { n: min });
   const d = new Date(ts);
   const sameDay = d.toDateString() === new Date().toDateString();
-  return sameDay ? `aujourd'hui à ${timeLabel(ts)}` : `le ${d.toLocaleDateString('fr-FR')} à ${timeLabel(ts)}`;
+  return sameDay
+    ? t('todayAt', { time: timeLabel(ts) })
+    : t('dateAt', { date: d.toLocaleDateString(localeTag), time: timeLabel(ts) });
 };
 
 function formatAddress(a?: Location.LocationGeocodedAddress) {
@@ -172,16 +175,16 @@ export default function HomeScreen({ navigation }: any) {
     setSend({ kind: 'sending' });
     try {
       if (!(await SMS.isAvailableAsync())) {
-        setSend({ kind: 'error', message: "Cet appareil ne peut pas envoyer de SMS." });
+        setSend({ kind: 'error', message: t('smsUnavailable') });
         return;
       }
       const coords = await getFreshCoords();
       const address = loc.kind === 'ready' ? loc.address : undefined;
       const body = coords
         ? `${contact.message} https://maps.google.com/?q=${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}` +
-          (coords.accuracy ? ` (précision ±${Math.round(coords.accuracy)} m)` : '') +
-          (address ? `\nPrès de : ${address}` : '')
-        : `${contact.message} (position indisponible, appelle-moi)`;
+          (coords.accuracy ? t('smsAccuracy', { m: Math.round(coords.accuracy) }) : '') +
+          (address ? t('smsNear', { address }) : '')
+        : `${contact.message}${t('smsNoLocation')}`;
 
       const { result } = await SMS.sendSMSAsync([contact.phone], body);
       const now = Date.now();
@@ -195,7 +198,7 @@ export default function HomeScreen({ navigation }: any) {
       saveLastSent(now);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      setSend({ kind: 'error', message: "L'envoi a échoué. Réessaie ou appelle directement." });
+      setSend({ kind: 'error', message: t('sendFailed') });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -255,7 +258,7 @@ export default function HomeScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Contact', { firstRun: false })}
               hitSlop={10}
               style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-              accessibilityLabel="Modifier le contact"
+              accessibilityLabel={t('editContact')}
             >
               <Ionicons name="settings-outline" size={22} color={colors.text} />
             </Pressable>
@@ -275,7 +278,7 @@ export default function HomeScreen({ navigation }: any) {
               onPressOut={onPressOut}
               disabled={sending}
               accessibilityRole="button"
-              accessibilityLabel={`Maintenir pour alerter ${contact?.name ?? 'ton contact'}`}
+              accessibilityLabel={t('holdToAlert', { name: contact?.name ?? t('yourContact') })}
             >
               <Animated.View style={[styles.sosOuter, { transform: [{ scale: btnScale }] }]}>
                 <LinearGradient colors={[colors.sosWarm, colors.sos, colors.sosDeep]} style={styles.sosBtn}>
@@ -283,12 +286,12 @@ export default function HomeScreen({ navigation }: any) {
                   {sending ? (
                     <>
                       <Ionicons name="paper-plane" size={44} color={colors.white} />
-                      <Text style={styles.sosSub}>Préparation…</Text>
+                      <Text style={styles.sosSub}>{t('preparing')}</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={styles.sosText}>SOS</Text>
-                      <Text style={styles.sosSub}>Maintenir appuyé</Text>
+                      <Text style={styles.sosText}>{t('sos')}</Text>
+                      <Text style={styles.sosSub}>{t('hold')}</Text>
                     </>
                   )}
                 </LinearGradient>
@@ -305,7 +308,7 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.avatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={type.label}>Alerte envoyée à</Text>
+                <Text style={type.label}>{t('alertSentTo')}</Text>
                 <Text style={styles.contactName} numberOfLines={1}>
                   {contact.name}
                 </Text>
@@ -314,7 +317,7 @@ export default function HomeScreen({ navigation }: any) {
               <Pressable
                 onPress={call}
                 style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.7 }]}
-                accessibilityLabel={`Appeler ${contact.name}`}
+                accessibilityLabel={t('call', { name: contact.name })}
               >
                 <Ionicons name="call" size={20} color={colors.ok} />
               </Pressable>
@@ -322,7 +325,7 @@ export default function HomeScreen({ navigation }: any) {
           )}
 
           <Text style={styles.footnote}>
-            {lastSent ? `Dernière alerte ${relativeLabel(lastSent)}` : 'Aucune alerte envoyée pour le moment'}
+            {lastSent ? t('lastAlert', { when: relativeLabel(lastSent) }) : t('noAlertYet')}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -342,31 +345,31 @@ function LocationCard({ loc, onFix }: { loc: LocState; onFix: () => void }) {
   switch (loc.kind) {
     case 'checking':
     case 'searching':
-      title = 'Recherche de ta position…';
-      detail = 'Reste à découvert si possible pour un meilleur signal GPS.';
+      title = t('locSearching');
+      detail = t('locSearchingDetail');
       break;
     case 'ready':
       icon = 'location';
       tint = colors.ok;
       bg = colors.okSoft;
-      title = loc.address ?? 'Position trouvée';
-      detail = `Précision ±${Math.round(loc.coords.accuracy ?? 0)} m · prête à être envoyée`;
+      title = loc.address ?? t('locFound');
+      detail = t('locReadyDetail', { m: Math.round(loc.coords.accuracy ?? 0) });
       break;
     case 'denied':
       icon = 'location-outline';
       tint = colors.danger;
       bg = colors.dangerSoft;
-      title = 'Localisation désactivée pour IMLOST';
-      detail = "Sans elle, ton contact recevra l'alerte mais pas ta position.";
-      action = loc.canAskAgain ? 'Autoriser' : 'Ouvrir les réglages';
+      title = t('locDenied');
+      detail = t('locDeniedDetail');
+      action = loc.canAskAgain ? t('locAllow') : t('openSettings');
       break;
     case 'off':
       icon = 'location-outline';
       tint = colors.danger;
       bg = colors.dangerSoft;
-      title = 'Le GPS du téléphone est coupé';
-      detail = 'Active la localisation pour joindre ta position.';
-      action = 'Activer';
+      title = t('locOff');
+      detail = t('locOffDetail');
+      action = t('locEnable');
       break;
   }
 
@@ -395,24 +398,24 @@ function SendFeedback({ send, hint, contactName }: { send: SendState; hint: bool
 
   if (hint) {
     icon = 'hand-left-outline';
-    text = 'Garde le doigt appuyé jusqu’à ce que le cercle soit rempli.';
+    text = t('hintHold');
   } else if (send.kind === 'sent') {
     icon = 'checkmark-circle';
     color = colors.ok;
-    text = `Alerte envoyée à ${contactName} à ${timeLabel(send.at)}`;
+    text = t('sentAt', { name: contactName ?? '', time: timeLabel(send.at) });
   } else if (send.kind === 'handed-off') {
     icon = 'checkmark-circle';
     color = colors.ok;
-    text = `Message préparé pour ${contactName}. Vérifie qu’il est bien parti.`;
+    text = t('handedOff', { name: contactName ?? '' });
   } else if (send.kind === 'cancelled') {
     icon = 'close-circle-outline';
-    text = 'Envoi annulé. Rien n’a été envoyé.';
+    text = t('cancelled');
   } else if (send.kind === 'error') {
     icon = 'alert-circle';
     color = colors.danger;
     text = send.message;
   } else {
-    text = `Ta position sera envoyée par SMS à ${contactName ?? 'ton contact'}.`;
+    text = t('idleInfo', { name: contactName ?? t('yourContact') });
   }
 
   return (

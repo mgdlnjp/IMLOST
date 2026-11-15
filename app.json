@@ -9,7 +9,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "IMLOST utilise ta position pour l'envoyer par SMS à ton contact de confiance quand tu déclenches une alerte."
+        "NSLocationWhenInUseUsageDescription": "IMLOST uses your location to text it to your trusted contact when you trigger an alert.",
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
@@ -30,7 +31,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "IMLOST utilise ta position pour l'envoyer par SMS à ton contact de confiance quand tu déclenches une alerte."
+          "locationWhenInUsePermission": "IMLOST uses your location to text it to your trusted contact when you trigger an alert."
         }
       ],
       [
@@ -41,7 +42,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#0B1020"
         }
-      ]
-    ]
+      ],
+      "expo-localization"
+    ],
+    "locales": {
+      "fr": "./locales/fr.json",
+      "en": "./locales/en.json"
+    }
   }
 }

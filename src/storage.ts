@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t } from './i18n';
 
 export type Contact = {
   name: string;
@@ -11,7 +12,7 @@ const LEGACY_PHONE_KEY = 'SAVED_PHONE_NUMBER';
 const LAST_SENT_KEY = 'IMLOST_LAST_SENT';
 
 export const defaultMessage = (name: string) =>
-  `${name ? name + ', ' : ''}je suis perdu·e et j'ai besoin d'aide. Voici ma position :`;
+  name ? t('defaultMessageNamed', { name }) : t('defaultMessage');
 
 export async function loadContact(): Promise<Contact | null> {
   try {
@@ -19,7 +20,7 @@ export async function loadContact(): Promise<Contact | null> {
     if (raw) return JSON.parse(raw) as Contact;
     // Migration depuis l'ancienne version (numéro seul)
     const legacy = await AsyncStorage.getItem(LEGACY_PHONE_KEY);
-    if (legacy) return { name: 'Maman', phone: legacy, message: defaultMessage('Maman') };
+    if (legacy) return { name: t('legacyContactName'), phone: legacy, message: defaultMessage(t('legacyContactName')) };
   } catch {
     // stockage illisible : on repart de zéro
   }
